@@ -1,0 +1,17 @@
+@"
+# Бинарники
+*.exe
+*.out
+/bin/
+
+# Переменные окружения
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Go
+vendor/
+"@ | Set-Content .gitignore
