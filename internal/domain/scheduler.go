@@ -21,6 +21,8 @@ type SchedulerCmd struct {
 }
 
 type TickerEntry struct {
-	Ticker *time.Ticker
-	Cancel context.CancelFunc
+	Ticker   *time.Ticker
+	Cancel   context.CancelFunc
+	Target   Target
+	Interval time.Duration
 }

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"sitepulse/internal/domain"
 	"sitepulse/internal/repository"
 	"sitepulse/internal/worker"
@@ -38,11 +39,10 @@ func (s *scheduler) Run(ctx context.Context) {
 	}
 }
 
-func (s *scheduler) spawnTicker(ctx context.Context, t domain.Target) {
+func (s *scheduler) spawnTicker(ctx context.Context, t domain.Target, d time.Duration) {
 	tickCtx, cancel := context.WithCancel(ctx)
-	ticker := time.NewTicker(time.Duration(t.CheckInterval) * time.Minute)
-	s.target[t.ID] = &domain.TickerEntry{Ticker: ticker, Cancel: cancel}
-
+	ticker := time.NewTicker(d)
+	s.target[t.ID] = &domain.TickerEntry{Ticker: ticker, Cancel: cancel, Target: t, Interval: d}
 	go func() {
 		defer ticker.Stop()
 		for {
@@ -69,7 +69,7 @@ func (s *scheduler) handleCmd(ctx context.Context, cmd domain.SchedulerCmd) {
 	switch cmd.Type {
 	case domain.CmdAdd:
 		if cmd.Target != nil {
-			s.spawnTicker(ctx, *cmd.Target)
+			s.spawnTicker(ctx, *cmd.Target, time.Duration(cmd.Target.CheckInterval)*time.Minute)
 		}
 	case domain.CmdRemove:
 		if entry, ok := s.target[cmd.TargetID]; ok {
@@ -79,12 +79,38 @@ func (s *scheduler) handleCmd(ctx context.Context, cmd domain.SchedulerCmd) {
 		}
 	case domain.CmdUpdateInterval:
 		if entry, ok := s.target[cmd.TargetID]; ok {
+			t := entry.Target
 			entry.Cancel()
 			entry.Ticker.Stop()
 			delete(s.target, cmd.TargetID)
+			s.spawnTicker(ctx, t, cmd.Interval)
 		}
-		if cmd.Target != nil {
-			s.spawnTicker(ctx, *cmd.Target)
-		}
+	}
+}
+
+func (s *scheduler) AddTarget(ctx context.Context, t domain.Target) error {
+	select {
+	case s.cmdCh <- domain.SchedulerCmd{Type: domain.CmdAdd, Target: &t}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (s *scheduler) RemoveTarget(id int64) error {
+	select {
+	case s.cmdCh <- domain.SchedulerCmd{Type: domain.CmdRemove, TargetID: id}:
+		return nil
+	default:
+		return fmt.Errorf("scheduler: command channel full")
+	}
+}
+
+func (s *scheduler) UpdateInterval(id int64, d time.Duration) error {
+	select {
+	case s.cmdCh <- domain.SchedulerCmd{Type: domain.CmdUpdateInterval, TargetID: id, Interval: d}:
+		return nil
+	default:
+		return fmt.Errorf("scheduler: command channel full")
 	}
 }
