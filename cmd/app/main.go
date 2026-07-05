@@ -8,10 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"sitepulse/internal/infrastructure/netclient"
 	"sitepulse/internal/repository/postgres"
-	"sitepulse/internal/usecase"
+	usercase "sitepulse/internal/usecase"
 	"sitepulse/internal/worker"
 
 	_ "github.com/lib/pq"
@@ -20,11 +21,14 @@ import (
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("failed to open db: %v", err)
 	}
-	if err := db.PingContext(context.Background()); err != nil {
+	if err := db.PingContext(ctx); err != nil {
 		log.Fatalf("failed to connect to db: %v", err)
 	}
 
@@ -42,10 +46,32 @@ func main() {
 	)
 	uc.SetPool(pool)
 
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
+	sched := usercase.NewScheduler(pool, checkResultRepo)
+
+	targets, err := targetRepo.GetAllActive(ctx)
+	if err != nil {
+		logger.Error("failed to load active targets", "error", err)
+	}
+
+	go sched.Run(ctx)
+
+	for _, t := range targets {
+		if err := sched.AddTarget(ctx, t); err != nil {
+			logger.Warn("failed to add target to scheduler",
+				"target_id", t.ID,
+				"error", err,
+			)
+		}
+	}
 
 	pool.Start(ctx)
+
+	time.AfterFunc(20*time.Second, func() {
+		if err := sched.UpdateInterval(1, 1*time.Minute); err != nil {
+			logger.Error("update interval failed", "error", err)
+		}
+		logger.Info("interval updated for target 1")
+	})
 
 	if err := uc.EnqueueAllTargets(ctx); err != nil {
 		logger.Error("initial enqueue failed", "error", err)
