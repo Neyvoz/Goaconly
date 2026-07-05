@@ -1,0 +1,1 @@
+ALTER TABLE targets ADD COLUMN keyword_to_find VARCHAR(255) NOT NULL DEFAULT '';
