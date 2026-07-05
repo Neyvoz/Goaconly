@@ -114,3 +114,12 @@ func (s *scheduler) UpdateInterval(id int64, d time.Duration) error {
 		return fmt.Errorf("scheduler: command channel full")
 	}
 }
+
+func NewScheduler(pool WorkerPool, repo repository.CheckResultRepository) SchedulerUseCase {
+	return &scheduler{
+		target: make(map[int64]*domain.TickerEntry),
+		cmdCh:  make(chan domain.SchedulerCmd, 256),
+		pool:   pool,
+		repo:   repo,
+	}
+}
