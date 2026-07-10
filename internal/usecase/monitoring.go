@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
-
 	"sitepulse/internal/domain"
-	"sitepulse/internal/repository"
 	"sitepulse/internal/worker"
+	"time"
 )
 
 // Checker — интерфейс сетевого движка из Недели 2.
@@ -17,16 +15,16 @@ type Checker interface {
 }
 
 type MonitoringUseCase struct {
-	targetRepo      repository.TargetRepository
-	checkResultRepo repository.CheckResultRepository
+	targetRepo      TargetRepository
+	checkResultRepo CheckResultRepository
 	checker         Checker
 	pool            *worker.Pool[domain.CheckJob]
 	logger          *slog.Logger
 }
 
 func NewMonitoringUseCase(
-	targetRepo repository.TargetRepository,
-	checkResultRepo repository.CheckResultRepository,
+	targetRepo TargetRepository,
+	checkResultRepo CheckResultRepository,
 	checker Checker,
 	pool *worker.Pool[domain.CheckJob],
 	logger *slog.Logger,

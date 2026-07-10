@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sitepulse/internal/domain"
-	"sitepulse/internal/repository"
 	"sitepulse/internal/worker"
 	"sync"
 	"time"
@@ -24,7 +23,7 @@ type scheduler struct {
 	mu     sync.RWMutex
 	cmdCh  chan domain.SchedulerCmd
 	pool   WorkerPool
-	repo   repository.CheckResultRepository
+	repo   CheckResultRepository
 }
 
 func (s *scheduler) Run(ctx context.Context) {
@@ -115,7 +114,7 @@ func (s *scheduler) UpdateInterval(id int64, d time.Duration) error {
 	}
 }
 
-func NewScheduler(pool WorkerPool, repo repository.CheckResultRepository) SchedulerUseCase {
+func NewScheduler(pool WorkerPool, repo CheckResultRepository) SchedulerUseCase {
 	return &scheduler{
 		target: make(map[int64]*domain.TickerEntry),
 		cmdCh:  make(chan domain.SchedulerCmd, 256),
