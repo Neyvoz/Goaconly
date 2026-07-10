@@ -1,4 +1,4 @@
-package repository
+package usecase
 
 import (
 	"context"
@@ -6,7 +6,12 @@ import (
 )
 
 type TargetRepository interface {
+	Create(ctx context.Context, target domain.Target) (domain.Target, error)
+	GetByID(ctx context.Context, id int64) (domain.Target, error)
 	GetAllActive(ctx context.Context) ([]domain.Target, error)
+	List(ctx context.Context, userID int64, limit, offset int) ([]domain.Target, int, error)
+	Update(ctx context.Context, target domain.Target) (domain.Target, error)
+	Delete(ctx context.Context, id int64) error
 }
 
 type CheckResultRepository interface {
