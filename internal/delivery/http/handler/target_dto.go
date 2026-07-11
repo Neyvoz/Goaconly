@@ -26,6 +26,16 @@ type TargetResponse struct {
 	CreatedAt        string `json:"created_at"`
 }
 
+// ListResponse — DTO для эндпоинта List. Оборачивает страницу результатов
+// метаданными пагинации, чтобы клиент мог построить UI-пагинатор без
+// дополнительных запросов "сколько всего записей".
+type ListResponse struct {
+	Items  []TargetResponse `json:"items"`
+	Total  int              `json:"total"`
+	Limit  int              `json:"limit"`
+	Offset int              `json:"offset"`
+}
+
 // toTargetResponse маппит доменную модель в DTO ответа.
 // Это единственное место, где домен "встречается" с представлением API —
 // вся остальная система ничего не знает про JSON и HTTP.
