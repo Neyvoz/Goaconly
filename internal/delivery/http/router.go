@@ -1,19 +1,20 @@
 package httpserver
 
-import "net/http"
+import (
+	"net/http"
+	"sitepulse/internal/delivery/http/handler"
+)
 
-type Depenencies struct {
+type Dependencies struct {
+	TargetHandler *handler.TargetHandler
 }
 
-func NewRouter(deps Depenencies) *http.ServeMux {
+func NewRouter(deps Dependencies) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/v1/targets", placeholderHandler)
-	mux.HandleFunc("POST /api/v1/targets", placeholderHandler)
-	mux.HandleFunc("GET /api/v1/targets/{id}", placeholderHandler)
-	mux.HandleFunc("PUT /api/v1/targets/{id}", placeholderHandler)
-	mux.HandleFunc("DELETE /api/v1/targets/{id}", placeholderHandler)
+	mux.HandleFunc("GET /api/v1/targets", deps.TargetHandler.List)
+	mux.HandleFunc("POST /api/v1/targets", deps.TargetHandler.Create)
+	mux.HandleFunc("GET /api/v1/targets/{id}", deps.TargetHandler.GetByID)
+	mux.HandleFunc("PUT /api/v1/targets/{id}", deps.TargetHandler.Update)
+	mux.HandleFunc("DELETE /api/v1/targets/{id}", deps.TargetHandler.Delete)
 	return mux
-}
-func placeholderHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
 }

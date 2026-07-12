@@ -3,13 +3,17 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	httpserver "sitepulse/internal/delivery/http"
+	"sitepulse/internal/delivery/http/handler"
 	"sitepulse/internal/infrastructure/netclient"
 	"sitepulse/internal/repository/postgres"
 	usercase "sitepulse/internal/usecase"
@@ -32,7 +36,22 @@ func main() {
 		log.Fatalf("failed to connect to db: %v", err)
 	}
 
+	// Сборка HTTP-слоя: repository -> usecase -> handler -> router
 	targetRepo := postgres.NewTargetRepo(db)
+	targetUsecase := usercase.NewTargetUsecase(targetRepo)
+	targetHandler := handler.NewTargetHandler(targetUsecase)
+
+	router := httpserver.NewRouter(httpserver.Dependencies{
+		TargetHandler: targetHandler,
+	})
+	httpAddr := os.Getenv("HTTP_ADDR")
+	if httpAddr == "" {
+		httpAddr = ":8080"
+	}
+
+	srv := httpserver.New(httpserver.Config{Addr: httpAddr}, router)
+
+	// Сборка конвейера мониторинга: checker + worker pool + scheduler
 	checkResultRepo := postgres.NewCheckResultRepo(db)
 
 	checker := netclient.NewChecker(logger)
@@ -48,6 +67,7 @@ func main() {
 
 	sched := usercase.NewScheduler(pool, checkResultRepo)
 
+	// Загрузка активных целей из БД и постановка на расписание
 	targets, err := targetRepo.GetAllActive(ctx)
 	if err != nil {
 		logger.Error("failed to load active targets", "error", err)
@@ -66,6 +86,7 @@ func main() {
 
 	pool.Start(ctx)
 
+	// Тестовое обновление интервала (временно, для проверки динамического планировщика)
 	time.AfterFunc(20*time.Second, func() {
 		if err := sched.UpdateInterval(1, 1*time.Minute); err != nil {
 			logger.Error("update interval failed", "error", err)
@@ -77,6 +98,15 @@ func main() {
 		logger.Error("initial enqueue failed", "error", err)
 	}
 
+	// Запуск сервера
+	go func() {
+		logger.Info("starting HTTP server", "addr", httpAddr)
+		if err := srv.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("http server failed", "error", err)
+		}
+	}()
+
+	// Ожидание сигнала завершения
 	<-ctx.Done()
 	logger.Info("shutdown signal received, waiting for workers...")
 
