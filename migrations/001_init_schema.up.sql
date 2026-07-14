@@ -11,19 +11,20 @@ CREATE TABLE IF NOT EXISTS plans (
 
 -- Пользователи
 CREATE TABLE IF NOT EXISTS users (
-    id            BIGSERIAL PRIMARY KEY,
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email         VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     plan_id       INTEGER NOT NULL REFERENCES plans(id) DEFAULT 1,
     is_active     BOOLEAN NOT NULL DEFAULT TRUE,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    company_name  VARCHAR(255) NOT NULL DEFAULT ''
 );
 
 -- Цели мониторинга
 CREATE TABLE IF NOT EXISTS targets (
     id              BIGSERIAL PRIMARY KEY,
-    user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     url             VARCHAR(2048) NOT NULL,
     check_interval  SMALLINT NOT NULL DEFAULT 5 CHECK (check_interval BETWEEN 1 AND 1440),
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
@@ -45,6 +46,22 @@ CREATE TABLE IF NOT EXISTS check_logs (
     error_message  TEXT,
     ssl_expires_at TIMESTAMPTZ
 );
+
+-- Рефреш токен
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Поиск по хэшу при рефреше
+CREATE INDEX idx_refresh_tokens_hash ON refresh_tokens (token_hash);
+
+-- Массовый revoke всех токенов юзера
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens (user_id) WHERE revoked = FALSE;
 
 -- Индексы производительности
 -- Запрос "дай последние N логов для target X" — самый частый
