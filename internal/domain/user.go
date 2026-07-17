@@ -28,6 +28,7 @@ type User struct {
 	PasswordHash string
 	CompanyName  string
 	IsActive     bool
+	PlanID       int64
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
