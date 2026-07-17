@@ -9,6 +9,8 @@ import (
 	"sitepulse/internal/domain"
 	"sitepulse/internal/usecase"
 	"strconv"
+
+	"github.com/google/uuid"
 )
 
 // TargetHandler — HTTP-обёртка над бизнес-логикой TargetUsecase.
@@ -182,7 +184,8 @@ func (h *TargetHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 // TODO: временная заглушка до Недели 6 (JWT). Возвращает фиксированный userID
 // для локальной разработки без авторизации.
-func getUserIDFromContext(ctx context.Context) int64 {
+func getUserIDFromContext(ctx context.Context) uuid.UUID {
 	_ = ctx
-	return 1
+	id, _ := uuid.Parse("00000000-0000-0000-0000-000000000001")
+	return id
 }

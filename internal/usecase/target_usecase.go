@@ -3,15 +3,17 @@ package usecase
 import (
 	"context"
 	"sitepulse/internal/domain"
+
+	"github.com/google/uuid"
 )
 
 // Методы Create, GetByID, List, Update, Delete
 type TargetUsecase interface {
-	Create(ctx context.Context, userID int64, url string, keyword string, intervalMinutes int) (domain.Target, error)
-	GetByID(ctx context.Context, userID int64, targetID int64) (domain.Target, error)
-	List(ctx context.Context, userID int64, limit, offset int) ([]domain.Target, int, error)
-	Update(ctx context.Context, userID int64, targetID int64, url string, keyword string, intervalMinutes int) (domain.Target, error)
-	Delete(ctx context.Context, userID int64, targetID int64) error
+	Create(ctx context.Context, userID uuid.UUID, url string, keyword string, intervalMinutes int) (domain.Target, error)
+	GetByID(ctx context.Context, userID uuid.UUID, targetID int64) (domain.Target, error)
+	List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Target, int, error)
+	Update(ctx context.Context, userID uuid.UUID, targetID int64, url string, keyword string, intervalMinutes int) (domain.Target, error)
+	Delete(ctx context.Context, userID uuid.UUID, targetID int64) error
 }
 
 // targetUsecase — приватная реализация интерфейса TargetUsecase.

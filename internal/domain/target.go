@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // CheckInterval — типизированный алиас для предотвращения путаницы с int
 type CheckInterval int
@@ -14,7 +18,7 @@ type CheckJob struct {
 // Это центральная сущность домена.
 type Target struct {
 	ID            int64
-	UserID        int64
+	UserID        uuid.UUID
 	URL           string
 	CheckInterval CheckInterval // в минутах
 	KeywordToFind string
