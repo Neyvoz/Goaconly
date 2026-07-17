@@ -20,7 +20,7 @@ const (
 	RoleViewer UserRole = "viewer"
 )
 
-// User — пользователь системы SitePulse.
+// User — пользователь системы goaconly.
 // Пароль хранится только в виде хеша — никогда не храним plaintext.
 type User struct {
 	ID           uuid.UUID

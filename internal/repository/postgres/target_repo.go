@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"sitepulse/internal/domain"
+	"goaconly/internal/domain"
+
+	"github.com/google/uuid"
 )
 
 type targetRepo struct {
@@ -77,7 +79,7 @@ func (r *targetRepo) GetByID(ctx context.Context, id int64) (domain.Target, erro
 	return t, nil
 }
 
-func (r *targetRepo) List(ctx context.Context, userID int64, limit, offset int) ([]domain.Target, int, error) {
+func (r *targetRepo) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Target, int, error) {
 	const countQ = `SELECT COUNT(*) FROM targets WHERE user_id = $1`
 	var total int
 	if err := r.db.QueryRowContext(ctx, countQ, userID).Scan(&total); err != nil {

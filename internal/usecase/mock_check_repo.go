@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"context"
+	"goaconly/internal/domain"
 	"log"
-	"sitepulse/internal/domain"
 )
 
 type MockCheckRepository struct{}

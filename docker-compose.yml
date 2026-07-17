@@ -3,7 +3,7 @@ version: "3.9"
 services:
   postgres:
     image: postgres:16-alpine          # alpine — меньший размер образа
-    container_name: sitepulse_postgres
+    container_name: goaconly_postgres
     environment:
       POSTGRES_USER:     ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -20,7 +20,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: sitepulse_redis
+    container_name: goaconly_redis
     ports:
       - "6379:6379"
     command: redis-server --save 60 1 --loglevel warning

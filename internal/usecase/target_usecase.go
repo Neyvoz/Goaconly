@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"context"
-	"sitepulse/internal/domain"
+	"goaconly/internal/domain"
 
 	"github.com/google/uuid"
 )
@@ -21,7 +21,7 @@ type targetUsecase struct {
 	repo TargetRepository
 }
 
-func (u *targetUsecase) GetByID(ctx context.Context, userID int64, targetID int64) (domain.Target, error) {
+func (u *targetUsecase) GetByID(ctx context.Context, userID uuid.UUID, targetID int64) (domain.Target, error) {
 	target, err := u.repo.GetByID(ctx, targetID)
 	if err != nil {
 		return domain.Target{}, err
@@ -37,11 +37,11 @@ func (u *targetUsecase) GetByID(ctx context.Context, userID int64, targetID int6
 	return target, nil
 }
 
-func (u *targetUsecase) List(ctx context.Context, userID int64, limit, offset int) ([]domain.Target, int, error) {
+func (u *targetUsecase) List(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Target, int, error) {
 	return u.repo.List(ctx, userID, limit, offset)
 }
 
-func (u *targetUsecase) Update(ctx context.Context, userID int64, targetID int64, url string, keyword string, intervalMinutes int) (domain.Target, error) {
+func (u *targetUsecase) Update(ctx context.Context, userID uuid.UUID, targetID int64, url string, keyword string, intervalMinutes int) (domain.Target, error) {
 	if intervalMinutes < 1 || intervalMinutes > 1440 {
 		return domain.Target{}, domain.ErrInvalidInterval
 	}
@@ -61,7 +61,7 @@ func (u *targetUsecase) Update(ctx context.Context, userID int64, targetID int64
 	return u.repo.Update(ctx, existing)
 }
 
-func (u *targetUsecase) Delete(ctx context.Context, userID int64, targetID int64) error {
+func (u *targetUsecase) Delete(ctx context.Context, userID uuid.UUID, targetID int64) error {
 	existing, err := u.repo.GetByID(ctx, targetID)
 	if err != nil {
 		return err
@@ -77,7 +77,7 @@ func NewTargetUsecase(repo TargetRepository) TargetUsecase {
 	return &targetUsecase{repo: repo}
 }
 
-func (u *targetUsecase) Create(ctx context.Context, userID int64, url string, keyword string, intervalMinutes int) (domain.Target, error) {
+func (u *targetUsecase) Create(ctx context.Context, userID uuid.UUID, url string, keyword string, intervalMinutes int) (domain.Target, error) {
 	if intervalMinutes < 1 || intervalMinutes > 1440 {
 		return domain.Target{}, domain.ErrInvalidInterval
 	}

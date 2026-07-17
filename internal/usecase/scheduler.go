@@ -3,8 +3,8 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"sitepulse/internal/domain"
-	"sitepulse/internal/worker"
+	"goaconly/internal/domain"
+	"goaconly/internal/worker"
 	"sync"
 	"time"
 )

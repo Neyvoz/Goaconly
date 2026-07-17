@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"sitepulse/internal/domain"
+	"goaconly/internal/domain"
 
 	"github.com/google/uuid"
 )

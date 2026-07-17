@@ -1,8 +1,8 @@
 package httpserver
 
 import (
+	"goaconly/internal/delivery/http/handler"
 	"net/http"
-	"sitepulse/internal/delivery/http/handler"
 )
 
 type Dependencies struct {

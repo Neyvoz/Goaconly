@@ -2,7 +2,7 @@ package netclient
 
 import (
 	"net/http"
-	"sitepulse/internal/domain"
+	"goaconly/internal/domain"
 	"time"
 )
 

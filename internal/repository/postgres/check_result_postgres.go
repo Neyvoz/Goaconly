@@ -3,7 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"sitepulse/internal/domain"
+	"goaconly/internal/domain"
 )
 
 type checkResultRepo struct {

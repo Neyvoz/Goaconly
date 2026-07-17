@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"context"
-	"sitepulse/internal/domain"
+	"goaconly/internal/domain"
 
 	"github.com/google/uuid"
 )

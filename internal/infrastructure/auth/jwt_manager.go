@@ -3,13 +3,13 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"sitepulse/internal/domain"
+	"goaconly/internal/domain"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
-	usecaseAuth "sitepulse/internal/usecase/auth"
+	usecaseAuth "goaconly/internal/usecase/auth"
 )
 
 // JWTManager - это менеджер JSON веб-токенов

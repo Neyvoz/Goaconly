@@ -3,9 +3,9 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"goaconly/internal/domain"
+	"goaconly/internal/worker"
 	"log/slog"
-	"sitepulse/internal/domain"
-	"sitepulse/internal/worker"
 	"time"
 )
 

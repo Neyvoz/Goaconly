@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"goaconly/internal/domain"
+	"goaconly/internal/usecase"
 	"net/http"
 	"net/url"
-	"sitepulse/internal/domain"
-	"sitepulse/internal/usecase"
 	"strconv"
 
 	"github.com/google/uuid"

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"sitepulse/internal/domain"
+	"goaconly/internal/domain"
 )
 
 const defaultScanLimit = 1 << 20 // 1MB

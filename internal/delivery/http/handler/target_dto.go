@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"sitepulse/internal/domain"
+	"goaconly/internal/domain"
 	"time"
 )
 

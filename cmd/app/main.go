@@ -12,12 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	httpserver "sitepulse/internal/delivery/http"
-	"sitepulse/internal/delivery/http/handler"
-	"sitepulse/internal/infrastructure/netclient"
-	"sitepulse/internal/repository/postgres"
-	usercase "sitepulse/internal/usecase"
-	"sitepulse/internal/worker"
+	httpserver "goaconly/internal/delivery/http"
+	"goaconly/internal/delivery/http/handler"
+	"goaconly/internal/infrastructure/netclient"
+	"goaconly/internal/repository/postgres"
+	usercase "goaconly/internal/usecase"
+	"goaconly/internal/worker"
 
 	_ "github.com/lib/pq"
 )
