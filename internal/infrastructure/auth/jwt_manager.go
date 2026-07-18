@@ -27,15 +27,15 @@ func NewJWTManager(secretKey string, tokenDuration time.Duration) *JWTManager {
 }
 
 // GenerateAccessToken генерирует и подписывает новый токен для пользователя
-func (m *JWTManager) GenerateAccessToken(userID uuid.UUID, planType string) (string, error) {
+func (m *JWTManager) GenerateAccessToken(userID uuid.UUID, planID int64) (string, error) {
 	now := time.Now()
 	claims := usecaseAuth.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(m.tokenDuration)),
 		},
-		UserID:   userID,
-		PlanType: planType,
+		UserID: userID,
+		PlanID: planID,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(m.secretKey)
