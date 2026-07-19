@@ -47,6 +47,7 @@ func (a *authUsecase) Login(ctx context.Context, rawEmail string, password strin
 		return "", "", domain.ErrInvalidCredentials
 	}
 
+	// Генерация новой пары токенов
 	accessToken, err = a.jwt.GenerateAccessToken(user.ID, user.PlanID)
 	if err != nil {
 		return "", "", err
@@ -71,11 +72,67 @@ func (a *authUsecase) Login(ctx context.Context, rawEmail string, password strin
 }
 
 func (a *authUsecase) Logout(ctx context.Context, refreshToken string) error {
-	panic("not implemented")
+	hash := hashToken(refreshToken)
+	storedToken, err := a.refreshTokenRepo.GetByHash(ctx, hash)
+	if err != nil {
+		return nil
+	}
+	if storedToken.Revoked {
+		return nil
+	}
+	return a.refreshTokenRepo.Revoke(ctx, storedToken.ID)
 }
 
 func (a *authUsecase) Refresh(ctx context.Context, refreshToken string) (newAccessToken string, newRefreshToken string, err error) {
-	panic("not implemented")
+	// Хэшируем токен
+	hash := hashToken(refreshToken)
+	// Проходимся по бд и ищем токен
+	storedToken, err := a.refreshTokenRepo.GetByHash(ctx, hash)
+	if err != nil {
+		return "", "", domain.ErrInvalidCredentials
+	}
+	// Проверка, отозвался ли токен
+	// Если токен уже отозван — просто отказываем. Более строгая защита
+	// (revoke всех токенов юзера при обнаружении повторного использования
+	// отозванного токена — признак возможной кражи) пока не реализована,
+	// это осознанное упрощение для MVP.
+	if storedToken.Revoked {
+		return "", "", domain.ErrInvalidCredentials
+	}
+	// Проверка срока действия
+	if time.Now().After(storedToken.ExpireAt) {
+		return "", "", domain.ErrInvalidCredentials
+	}
+	// Отзываем старый токен и получаем пользователя
+	if err := a.refreshTokenRepo.Revoke(ctx, storedToken.ID); err != nil {
+		return "", "", err
+	}
+	user, err := a.userRepo.GetByID(ctx, storedToken.UserID)
+	if err != nil {
+		return "", "", err
+	}
+	// Генерация новой пары токенов как в Login
+	newAccessToken, err = a.jwt.GenerateAccessToken(user.ID, user.PlanID)
+	if err != nil {
+		return "", "", err
+	}
+
+	rawRefresh, newHash, err := generateOpaqueToken()
+	if err != nil {
+		return "", "", err
+	}
+
+	rt := domain.RefreshToken{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		TokenHash: newHash,
+		ExpireAt:  time.Now().Add(a.refreshTokenTTL),
+		Revoked:   false,
+	}
+	if err := a.refreshTokenRepo.Store(ctx, rt); err != nil {
+		return "", "", err
+	}
+	return newAccessToken, rawRefresh, nil
 }
 
 func (a *authUsecase) Register(ctx context.Context, rawEmail string, password string, companyName string) (domain.User, error) {

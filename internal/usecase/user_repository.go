@@ -15,7 +15,7 @@ type UserRepository interface {
 
 type RefreshTokenRepository interface {
 	Store(ctx context.Context, t domain.RefreshToken) error
-	GetByHash(ctx context.Context) (domain.RefreshToken, error)
+	GetByHash(ctx context.Context, tokenHash string) (domain.RefreshToken, error)
 	Revoke(ctx context.Context, id uuid.UUID) error
 	RevokeAllForUser(ctx context.Context, userID uuid.UUID) error
 }
