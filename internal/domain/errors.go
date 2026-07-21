@@ -15,6 +15,7 @@ var (
 	ErrInvalidCredentials   = errors.New("invalid credentials")
 	ErrInvalidEmail         = errors.New("invalid email format")
 	ErrPasswordTooLong      = errors.New("password must not exceed 72 bytes")
+	ErrPasswordTooShort     = errors.New("password must be at least 8 bytes")
 	ErrTokenExpired         = errors.New("access token has expired")
 	ErrRefreshTokenNotFound = errors.New("refresh token not found")
 )
