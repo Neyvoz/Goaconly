@@ -56,6 +56,7 @@ func main() {
 	router := httpserver.NewRouter(httpserver.Dependencies{
 		TargetHandler: targetHandler,
 		AuthHandler:   authHandler,
+		JWTService:    jwtManager,
 	})
 	httpAddr := os.Getenv("HTTP_ADDR")
 	if httpAddr == "" {
