@@ -14,8 +14,11 @@ import (
 
 	httpserver "goaconly/internal/delivery/http"
 	"goaconly/internal/delivery/http/handler"
+	authinfra "goaconly/internal/infrastructure/auth"
 	"goaconly/internal/infrastructure/netclient"
+	"goaconly/internal/infrastructure/security"
 	"goaconly/internal/repository/postgres"
+	"goaconly/internal/usecase"
 	usercase "goaconly/internal/usecase"
 	"goaconly/internal/worker"
 
@@ -41,8 +44,18 @@ func main() {
 	targetUsecase := usercase.NewTargetUsecase(targetRepo)
 	targetHandler := handler.NewTargetHandler(targetUsecase)
 
+	userRepo := postgres.NewUserRepo(db)
+	refreshTokenRepo := postgres.NewRefreshTokenRepo(db)
+	hasher := security.NewBcryptHasher(10)
+	jwtManager := authinfra.NewJWTManager(os.Getenv("JWT_SECRET"), 15*time.Minute)
+	refreshTokenTTL := 30 * 24 * time.Hour
+
+	authUsecase := usecase.NewAuthUsecase(userRepo, refreshTokenRepo, hasher, jwtManager, refreshTokenTTL)
+	authHandler := handler.NewAuthHandler(authUsecase)
+
 	router := httpserver.NewRouter(httpserver.Dependencies{
 		TargetHandler: targetHandler,
+		AuthHandler:   authHandler,
 	})
 	httpAddr := os.Getenv("HTTP_ADDR")
 	if httpAddr == "" {
