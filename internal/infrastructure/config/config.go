@@ -2,37 +2,54 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 	"time"
+
+	"github.com/caarlos0/env/v11"
 )
 
 type Config struct {
-	App      AppConfig
-	Database DatabaseConfig
-	Redis    RedisConfig
+	App       AppConfig
+	Database  DatabaseConfig
+	Redis     RedisConfig
+	RateLimit RateLimitConfig
+	Cache     CacheConfig
 }
 
 type AppConfig struct {
-	Env  string
-	Port string
+	Env  string `env:"APP_ENV" envDefault:"development"`
+	Port string `env:"APP_PORT" envDefault:"8080"`
 }
 
 type DatabaseConfig struct {
-	Host         string
-	Port         string
-	User         string
-	Password     string
-	Name         string
-	MaxOpenConns int
-	MaxIdleConns int
-	ConnTimeout  time.Duration
+	Host         string        `env:"DB_HOST,required"`
+	Port         string        `env:"DB_PORT" envDefault:"5432"`
+	User         string        `env:"DB_USER,required"`
+	Password     string        `env:"DB_PASSWORD,required"`
+	Name         string        `env:"DB_NAME,required"`
+	MaxOpenConns int           `env:"DB_MAX_OPEN_CONNS" envDefault:"25"`
+	MaxIdleConns int           `env:"DB_MAX_IDLE_CONNS" envDefault:"5"`
+	ConnTimeout  time.Duration `env:"DB_CONN_TIMEOUT" envDefault:"5s"`
 }
 
 type RedisConfig struct {
-	Addr     string
-	Password string
-	DB       int
+	Addr         string        `env:"REDIS_ADDR,required"`
+	Password     string        `env:"REDIS_PASSWORD"`
+	DB           int           `env:"REDIS_DB" envDefault:"0"`
+	PoolSize     int           `env:"REDIS_POOL_SIZE" envDefault:"10"`
+	MinIdleConns int           `env:"REDIS_MIN_IDLE_CONNS" envDefault:"2"`
+	DialTimeout  time.Duration `env:"REDIS_DIAL_TIMEOUT" envDefault:"5s"`
+	ReadTimeout  time.Duration `env:"REDIS_READ_TIMEOUT" envDefault:"3s"`
+	WriteTimeout time.Duration `env:"REDIS_WRITE_TIMEOUT" envDefault:"3s"`
+}
+
+type RateLimitConfig struct {
+	DefaultRPS   int           `env:"RATE_LIMIT_DEFAULT_RPS" envDefault:"10"`
+	AuthRPS      int           `env:"RATE_LIMIT_AUTH_RPS" envDefault:"3"`
+	WindowLength time.Duration `env:"RATE_LIMIT_WINDOW" envDefault:"1s"`
+}
+
+type CacheConfig struct {
+	SiteStatusTTL time.Duration `env:"CACHE_SITE_STATUS_TTL" envDefault:"30s"`
 }
 
 // DSN возвращает строку подключения к PostgreSQL.
@@ -49,60 +66,9 @@ func (d DatabaseConfig) DSN() string {
 // Паника при отсутствии обязательных значений — это осознанное решение:
 // приложение не должно стартовать с неполным конфигом.
 func Load() (*Config, error) {
-	dbMaxOpen, err := strconv.Atoi(getEnv("DB_MAX_OPEN_CONNS", "25"))
-	if err != nil {
-		return nil, fmt.Errorf("invalid DB_MAX_OPEN_CONNS: %w", err)
+	cfg := &Config{}
+	if err := env.Parse(cfg); err != nil {
+		return nil, fmt.Errorf("parse config: %w", err)
 	}
-
-	dbMaxIdle, err := strconv.Atoi(getEnv("DB_MAX_IDLE_CONNS", "5"))
-	if err != nil {
-		return nil, fmt.Errorf("invalid DB_MAX_IDLE_CONNS: %w", err)
-	}
-
-	connTimeout, err := time.ParseDuration(getEnv("DB_CONN_TIMEOUT", "5s"))
-	if err != nil {
-		return nil, fmt.Errorf("invalid DB_CONN_TIMEOUT: %w", err)
-	}
-
-	redisDB, err := strconv.Atoi(getEnv("REDIS_DB", "0"))
-	if err != nil {
-		return nil, fmt.Errorf("invalid REDIS_DB: %w", err)
-	}
-
-	return &Config{
-		App: AppConfig{
-			Env:  getEnv("APP_ENV", "development"),
-			Port: getEnv("APP_PORT", "8080"),
-		},
-		Database: DatabaseConfig{
-			Host:         mustGetEnv("DB_HOST"),
-			Port:         getEnv("DB_PORT", "5432"),
-			User:         mustGetEnv("DB_USER"),
-			Password:     mustGetEnv("DB_PASSWORD"),
-			Name:         mustGetEnv("DB_NAME"),
-			MaxOpenConns: dbMaxOpen,
-			MaxIdleConns: dbMaxIdle,
-			ConnTimeout:  connTimeout,
-		},
-		Redis: RedisConfig{
-			Addr:     getEnv("REDIS_ADDR", "localhost:6379"),
-			Password: getEnv("REDIS_PASSWORD", ""),
-			DB:       redisDB,
-		},
-	}, nil
-}
-
-func getEnv(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
-}
-
-func mustGetEnv(key string) string {
-	v := os.Getenv(key)
-	if v == "" {
-		panic(fmt.Sprintf("required environment variable %q is not set", key))
-	}
-	return v
+	return cfg, nil
 }

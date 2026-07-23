@@ -15,10 +15,13 @@ import (
 	httpserver "goaconly/internal/delivery/http"
 	"goaconly/internal/delivery/http/handler"
 	authinfra "goaconly/internal/infrastructure/auth"
+	"goaconly/internal/infrastructure/cache"
+	"goaconly/internal/infrastructure/config"
 	"goaconly/internal/infrastructure/netclient"
 	"goaconly/internal/infrastructure/security"
 	"goaconly/internal/repository/postgres"
 	"goaconly/internal/usecase"
+
 	usercase "goaconly/internal/usecase"
 	"goaconly/internal/worker"
 
@@ -26,6 +29,19 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
+	}
+
+	redisClient, err := cache.NewRedisClient(ctx, cfg.Redis)
+	if err != nil {
+		log.Fatalf("redis init: %v", err)
+	}
+	defer redisClient.Close()
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
