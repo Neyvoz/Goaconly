@@ -18,6 +18,7 @@ import (
 	"goaconly/internal/infrastructure/cache"
 	"goaconly/internal/infrastructure/config"
 	"goaconly/internal/infrastructure/netclient"
+	"goaconly/internal/infrastructure/ratelimit"
 	"goaconly/internal/infrastructure/security"
 	"goaconly/internal/repository/postgres"
 	"goaconly/internal/usecase"
@@ -25,10 +26,14 @@ import (
 	usercase "goaconly/internal/usecase"
 	"goaconly/internal/worker"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("no .env file found, relying on real environment variables")
+	}
 	ctx := context.Background()
 
 	cfg, err := config.Load()
@@ -47,10 +52,14 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	db, err := sql.Open("postgres", cfg.Database.DSN())
 	if err != nil {
 		log.Fatalf("failed to open db: %v", err)
 	}
+
+	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+
 	if err := db.PingContext(ctx); err != nil {
 		log.Fatalf("failed to connect to db: %v", err)
 	}
@@ -69,10 +78,14 @@ func main() {
 	authUsecase := usecase.NewAuthUsecase(userRepo, refreshTokenRepo, hasher, jwtManager, refreshTokenTTL)
 	authHandler := handler.NewAuthHandler(authUsecase)
 
+	limiter := ratelimit.NewRedisLimiter(redisClient)
+
 	router := httpserver.NewRouter(httpserver.Dependencies{
 		TargetHandler: targetHandler,
 		AuthHandler:   authHandler,
 		JWTService:    jwtManager,
+		Limiter:       limiter,
+		RateLimitCfg:  cfg.RateLimit,
 	})
 	httpAddr := os.Getenv("HTTP_ADDR")
 	if httpAddr == "" {
